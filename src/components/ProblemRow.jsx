@@ -11,7 +11,7 @@ import {
 import { getLeetCodeUrl, getGfgSearchUrl } from "../utils/helper";
 
 const ProblemRow = memo(
-  ({ problem, status, note, isReviewDue, onToggle, onUpdateNote }) => {
+  ({ problem, statuses = [], note, isReviewDue, onToggle, onUpdateNote }) => {
     const [isNoteOpen, setIsNoteOpen] = useState(false);
     const [localNote, setLocalNote] = useState(note || "");
 
@@ -19,24 +19,36 @@ const ProblemRow = memo(
       setLocalNote(note || "");
     }, [note]);
 
-    let rowStyles =
-      "hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all duration-200";
-    let iconStyles = "text-slate-300 dark:text-slate-600";
+    const isDone = statuses.includes("done");
+    const isRevise = statuses.includes("revise");
+    const isHighlight = statuses.includes("highlight");
 
-    if (status === "done") {
-      rowStyles =
-        "bg-emerald-50/60 dark:bg-emerald-900/10 border-l-4 border-emerald-500";
-      iconStyles = "text-emerald-500";
-    } else if (status === "revise") {
-      rowStyles =
-        "bg-amber-50/60 dark:bg-amber-900/10 border-l-4 border-amber-500";
+    // Visual Hierarchy logic
+    let rowStyles =
+      "hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-all duration-200 border-l-4 ";
+    let iconStyles = "text-slate-300 dark:text-slate-600";
+    let IconComponent = () => (
+      <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600" />
+    );
+
+    if (isDone && isRevise) {
+      rowStyles += "bg-emerald-50/40 dark:bg-emerald-900/10 border-amber-500";
       iconStyles = "text-amber-500";
-    } else if (status === "highlight") {
-      rowStyles =
-        "bg-purple-50/60 dark:bg-purple-900/10 border-l-4 border-purple-500";
+      IconComponent = RefreshCw;
+    } else if (isDone) {
+      rowStyles += "bg-emerald-50/60 dark:bg-emerald-900/10 border-emerald-500";
+      iconStyles = "text-emerald-500";
+      IconComponent = CheckCircle2;
+    } else if (isRevise) {
+      rowStyles += "bg-amber-50/60 dark:bg-amber-900/10 border-amber-500";
+      iconStyles = "text-amber-500";
+      IconComponent = RefreshCw;
+    } else if (isHighlight) {
+      rowStyles += "bg-purple-50/60 dark:bg-purple-900/10 border-purple-500";
       iconStyles = "text-purple-500";
+      IconComponent = Star;
     } else {
-      rowStyles += " border-l-4 border-transparent";
+      rowStyles += "border-transparent";
     }
 
     const handleSaveNote = () => {
@@ -49,26 +61,19 @@ const ProblemRow = memo(
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5">
           <div className="flex items-start gap-4 flex-1 min-w-0">
             <div className={`mt-0.5 shrink-0 ${iconStyles} transition-colors`}>
-              {status === "done" ? (
-                <CheckCircle2
-                  size={22}
-                  className="fill-emerald-100 dark:fill-emerald-900/40"
-                />
-              ) : status === "revise" ? (
-                <RefreshCw size={22} />
-              ) : status === "highlight" ? (
-                <Star
-                  size={22}
-                  className="fill-purple-100 dark:fill-purple-900/40"
-                />
-              ) : (
-                <div className="w-5 h-5 rounded-full border-2 border-slate-300 dark:border-slate-600" />
-              )}
+              <IconComponent
+                size={22}
+                className={
+                  isDone && !isRevise
+                    ? "fill-emerald-100 dark:fill-emerald-900/40"
+                    : ""
+                }
+              />
             </div>
             <div className="flex flex-col gap-2.5">
               <div className="flex items-center gap-3 flex-wrap">
                 <span
-                  className={`text-base font-semibold leading-tight ${status === "done" ? "text-slate-500 dark:text-slate-400 line-through decoration-emerald-500/30" : "text-slate-700 dark:text-slate-200"}`}
+                  className={`text-base font-semibold leading-tight ${isDone ? "text-slate-500 dark:text-slate-400 line-through decoration-emerald-500/30" : "text-slate-700 dark:text-slate-200"}`}
                 >
                   {problem}
                 </span>
@@ -139,7 +144,7 @@ const ProblemRow = memo(
               <button
                 key={key}
                 onClick={() => onToggle(problem, key)}
-                className={`cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-all ${status === key ? active : `bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm ${idle}`}`}
+                className={`cursor-pointer flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-bold transition-all ${statuses.includes(key) ? active : `bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 shadow-sm ${idle}`}`}
               >
                 {icon} {label}
               </button>

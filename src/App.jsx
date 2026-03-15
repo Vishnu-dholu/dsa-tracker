@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { thirtyDaySheet, fullSheet } from "./data";
-import { ChevronDown, Filter } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 // Components
 import BackgroundBlobs from "./components/BackgroundBlobs";
@@ -20,10 +20,26 @@ export default function App() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [topicFilter, setTopicFilter] = useState("all");
 
-  // Load from Storage
+  // Load from Storage & Migrate Legacy Data
   useEffect(() => {
     const savedProgress = localStorage.getItem("modernDsaProgress");
-    if (savedProgress) setProgress(JSON.parse(savedProgress));
+    if (savedProgress) {
+      const parsed = JSON.parse(savedProgress);
+      let needsMigration = false;
+
+      // MIGRATION: Convert old string statuses (e.g. "done") to arrays (e.g. ["done"])
+      Object.keys(parsed).forEach((key) => {
+        if (typeof parsed[key] === "string") {
+          parsed[key] = [parsed[key]];
+          needsMigration = true;
+        }
+      });
+
+      setProgress(parsed);
+      if (needsMigration) {
+        localStorage.setItem("modernDsaProgress", JSON.stringify(parsed));
+      }
+    }
 
     const savedNotes = localStorage.getItem("modernDsaNotes");
     if (savedNotes) setNotes(JSON.parse(savedNotes));
@@ -62,23 +78,46 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Callbacks
-  const toggleStatus = useCallback((problem, status) => {
+  // Callbacks for Multi-Select Status
+  const toggleStatus = useCallback((problem, statusKey) => {
     setProgress((prev) => {
-      const currentStatus = prev[problem];
-      const newStatus = currentStatus === status ? null : status;
+      const currentStatuses = prev[problem] || [];
+      let newStatuses;
 
-      setCompletionDates((prevDates) => {
-        const newDates = { ...prevDates };
-        if (newStatus === "done" && currentStatus !== "done") {
-          newDates[problem] = new Date().toISOString();
-        } else if (currentStatus === "done" && newStatus !== "done") {
-          delete newDates[problem];
-        }
-        return newDates;
-      });
+      // Toggle the specific status inside the array
+      if (currentStatuses.includes(statusKey)) {
+        newStatuses = currentStatuses.filter((s) => s !== statusKey);
+      } else {
+        newStatuses = [...currentStatuses, statusKey];
+      }
 
-      return { ...prev, [problem]: newStatus };
+      // Heatmap & Date tracking (Only triggers when "done" is toggled)
+      if (statusKey === "done") {
+        setCompletionDates((prevDates) => {
+          const newDates = { ...prevDates };
+          if (
+            newStatuses.includes("done") &&
+            !currentStatuses.includes("done")
+          ) {
+            newDates[problem] = new Date().toISOString();
+          } else if (
+            !newStatuses.includes("done") &&
+            currentStatuses.includes("done")
+          ) {
+            delete newDates[problem];
+          }
+          return newDates;
+        });
+      }
+
+      // Cleanup empty arrays
+      if (newStatuses.length === 0) {
+        const nextProgress = { ...prev };
+        delete nextProgress[problem];
+        return nextProgress;
+      }
+
+      return { ...prev, [problem]: newStatuses };
     });
   }, []);
 
@@ -126,13 +165,16 @@ export default function App() {
     [currentData],
   );
 
+  // Calculations looking for 'done' inside the array
   const { totalProblems, completed } = useMemo(() => {
     let total = 0,
       done = 0;
     currentData.forEach((topic) => {
       topic.patterns.forEach((pat) => {
         total += pat.problems.length;
-        done += pat.problems.filter((p) => progress[p] === "done").length;
+        done += pat.problems.filter((p) =>
+          progress[p]?.includes("done"),
+        ).length;
       });
     });
     return { totalProblems: total, completed: done };
@@ -143,7 +185,7 @@ export default function App() {
 
   const isReviewDue = useCallback(
     (problem) => {
-      if (progress[problem] !== "done" || !completionDates[problem])
+      if (!progress[problem]?.includes("done") || !completionDates[problem])
         return false;
       const daysElapsed =
         (Date.now() - new Date(completionDates[problem]).getTime()) /
@@ -192,20 +234,25 @@ export default function App() {
             );
             const topicDone = topicData.patterns.reduce(
               (acc, pat) =>
-                acc + pat.problems.filter((p) => progress[p] === "done").length,
+                acc +
+                pat.problems.filter((p) => progress[p]?.includes("done"))
+                  .length,
               0,
             );
             const topicPercent =
               topicTotal === 0 ? 0 : Math.round((topicDone / topicTotal) * 100);
 
+            // Filters logic updated for array check
             const filteredPatterns = topicData.patterns
               .map((category) => {
                 const filteredProblems = category.problems.filter((problem) => {
-                  const status = progress[problem];
-                  if (statusFilter === "hide_done") return status !== "done";
-                  if (statusFilter === "revise") return status === "revise";
+                  const statuses = progress[problem] || [];
+                  if (statusFilter === "hide_done")
+                    return !statuses.includes("done");
+                  if (statusFilter === "revise")
+                    return statuses.includes("revise");
                   if (statusFilter === "highlight")
-                    return status === "highlight";
+                    return statuses.includes("highlight");
                   if (statusFilter === "review_due")
                     return isReviewDue(problem);
                   return true;
@@ -217,6 +264,9 @@ export default function App() {
             if (filteredPatterns.length === 0) return null;
 
             return (
+              // ... THE REST OF YOUR RENDER LOGIC STAYS THE SAME ...
+              // (Keep the existing return statement mapping over Topics/Patterns from the previous version)
+              // Just make sure to pass `statuses={progress[problem] || []}` to ProblemRow instead of `status`
               <div key={tIdx} className="space-y-4">
                 <div
                   className="group flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-2xl border border-white/80 dark:border-slate-700/50 shadow-md shadow-slate-200/50 dark:shadow-slate-900/50 cursor-pointer hover:border-indigo-300/80 dark:hover:border-indigo-700/80 hover:shadow-indigo-100 dark:hover:shadow-indigo-900/20 transition-all duration-200"
@@ -250,8 +300,8 @@ export default function App() {
                 >
                   {filteredPatterns.map((category, cIdx) => {
                     const categoryTotalActual = category.problems.length;
-                    const categoryDoneActual = category.problems.filter(
-                      (p) => progress[p] === "done",
+                    const categoryDoneActual = category.problems.filter((p) =>
+                      progress[p]?.includes("done"),
                     ).length;
                     const categoryPercent = Math.round(
                       (categoryDoneActual / categoryTotalActual) * 100,
@@ -295,7 +345,7 @@ export default function App() {
                               <ProblemRow
                                 key={problem}
                                 problem={problem}
-                                status={progress[problem]}
+                                statuses={progress[problem] || []} // <-- CHANGED TO STATUSES
                                 note={notes[problem]}
                                 isReviewDue={isReviewDue(problem)}
                                 onToggle={toggleStatus}
@@ -311,50 +361,8 @@ export default function App() {
               </div>
             );
           })}
-
-          {currentData.every((topicData) => {
-            if (topicFilter !== "all" && topicData.topic !== topicFilter)
-              return true;
-            return topicData.patterns.every((category) =>
-              category.problems.every((problem) => {
-                const status = progress[problem];
-                if (statusFilter === "hide_done") return status === "done";
-                if (statusFilter === "revise") return status !== "revise";
-                if (statusFilter === "highlight") return status !== "highlight";
-                if (statusFilter === "review_due") return !isReviewDue(problem);
-                return false;
-              }),
-            );
-          }) && (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4 shadow-sm border border-slate-200 dark:border-slate-700">
-                <Filter size={28} className="text-slate-400" />
-              </div>
-              <h3 className="text-lg font-bold text-slate-600 dark:text-slate-300 mb-1">
-                No problems match
-              </h3>
-              <p className="text-sm text-slate-400 dark:text-slate-500 mb-4">
-                Try changing your filters
-              </p>
-              <button
-                onClick={() => {
-                  setStatusFilter("all");
-                  setTopicFilter("all");
-                }}
-                className="px-4 py-2 rounded-xl bg-indigo-500 text-white text-sm font-bold hover:bg-indigo-600 transition-colors shadow-md shadow-indigo-500/20 cursor-pointer"
-              >
-                Clear Filters
-              </button>
-            </div>
-          )}
         </div>
       </div>
-
-      <style>{`
-        @keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(400%); } }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      `}</style>
     </div>
   );
 }
