@@ -7,6 +7,8 @@ import {
   Moon,
 } from "lucide-react";
 
+import myLogo from "../../public/dsa-logo.svg";
+
 export default function Header({
   activeTab,
   setActiveTab,
@@ -25,8 +27,13 @@ export default function Header({
       <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-lg shadow-indigo-500/30">
-              <Activity size={24} />
+            <div className="p-1.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+              {/* <Activity size={24} /> */}
+              <img
+                src={myLogo}
+                alt="DSA Mastery Logo"
+                className="w-8 h-8 object-contain"
+              />
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
               DSA Mastery
