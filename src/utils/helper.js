@@ -8,3 +8,8 @@ export const getGfgSearchUrl = (problemString) => {
   const name = problemString.replace(/^\d+\.\s*/, "").trim();
   return `https://www.google.com/search?q=site%3Ageeksforgeeks.org%2Fproblems+${encodeURIComponent(name)}`;
 };
+
+export const getCodingNinjasSearchUrl = (problemString) => {
+  const name = problemString.replace(/^\d+\.\s*/, "").trim();
+  return `https://www.google.com/search?q=site%3Anaukri.com%2Fcode360%2Fproblems+${encodeURIComponent(name)}`;
+};

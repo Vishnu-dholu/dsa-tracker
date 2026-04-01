@@ -8,7 +8,11 @@ import {
   PenLine,
   Timer,
 } from "lucide-react";
-import { getLeetCodeUrl, getGfgSearchUrl } from "../utils/helper";
+import {
+  getLeetCodeUrl,
+  getGfgSearchUrl,
+  getCodingNinjasSearchUrl,
+} from "../utils/helper";
 
 const ProblemRow = memo(
   ({ problem, statuses = [], note, isReviewDue, onToggle, onUpdateNote }) => {
@@ -99,6 +103,14 @@ const ProblemRow = memo(
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-500/20 transition-colors text-xs font-bold border border-green-200 dark:border-green-500/20 shadow-sm"
                 >
                   <Search size={12} /> GFG
+                </a>
+                <a
+                  href={getCodingNinjasSearchUrl(problem)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors text-xs font-bold border border-rose-200 dark:border-rose-500/20 shadow-sm"
+                >
+                  <Search size={12} /> Coding Ninjas
                 </a>
               </div>
             </div>
