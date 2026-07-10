@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { thirtyDaySheet, fullSheet } from "./data";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
+import { KEYS, load, save } from "./utils/storage";
 
 // Components
 import BackgroundBlobs from "./components/BackgroundBlobs";
@@ -19,52 +20,59 @@ export default function App() {
   const [collapsedPatterns, setCollapsedPatterns] = useState({});
   const [statusFilter, setStatusFilter] = useState("all");
   const [topicFilter, setTopicFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(true);
+  const isInitialized = useRef(false);
 
-  // Load from Storage & Migrate Legacy Data
+  // Load from IndexedDB (with automatic localStorage migration)
   useEffect(() => {
-    const savedProgress = localStorage.getItem("modernDsaProgress");
-    if (savedProgress) {
-      const parsed = JSON.parse(savedProgress);
-      let needsMigration = false;
+    async function init() {
+      const [savedProgress, savedNotes, savedDates] = await Promise.all([
+        load(KEYS.progress),
+        load(KEYS.notes),
+        load(KEYS.dates),
+      ]);
 
-      // MIGRATION: Convert old string statuses (e.g. "done") to arrays (e.g. ["done"])
-      Object.keys(parsed).forEach((key) => {
-        if (typeof parsed[key] === "string") {
-          parsed[key] = [parsed[key]];
-          needsMigration = true;
+      if (savedProgress) {
+        // MIGRATION: Convert old string statuses (e.g. "done") to arrays (e.g. ["done"])
+        let needsMigration = false;
+        Object.keys(savedProgress).forEach((key) => {
+          if (typeof savedProgress[key] === "string") {
+            savedProgress[key] = [savedProgress[key]];
+            needsMigration = true;
+          }
+        });
+        setProgress(savedProgress);
+        if (needsMigration) {
+          await save(KEYS.progress, savedProgress);
         }
-      });
-
-      setProgress(parsed);
-      if (needsMigration) {
-        localStorage.setItem("modernDsaProgress", JSON.stringify(parsed));
       }
+
+      if (savedNotes) setNotes(savedNotes);
+      if (savedDates) setCompletionDates(savedDates);
+
+      const savedTheme = localStorage.getItem("dsaTheme");
+      if (
+        savedTheme === "dark" ||
+        (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)
+      ) {
+        setIsDarkMode(true);
+      }
+
+      isInitialized.current = true;
+      setIsLoading(false);
     }
-
-    const savedNotes = localStorage.getItem("modernDsaNotes");
-    if (savedNotes) setNotes(JSON.parse(savedNotes));
-
-    const savedDates = localStorage.getItem("modernDsaDates");
-    if (savedDates) setCompletionDates(JSON.parse(savedDates));
-
-    const savedTheme = localStorage.getItem("dsaTheme");
-    if (
-      savedTheme === "dark" ||
-      (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)
-    ) {
-      setIsDarkMode(true);
-    }
+    init();
   }, []);
 
-  // Save Progress, Notes, & Dates
+  // Save Progress, Notes, & Dates to IndexedDB
   useEffect(() => {
-    localStorage.setItem("modernDsaProgress", JSON.stringify(progress));
+    if (isInitialized.current) save(KEYS.progress, progress);
   }, [progress]);
   useEffect(() => {
-    localStorage.setItem("modernDsaNotes", JSON.stringify(notes));
+    if (isInitialized.current) save(KEYS.notes, notes);
   }, [notes]);
   useEffect(() => {
-    localStorage.setItem("modernDsaDates", JSON.stringify(completionDates));
+    if (isInitialized.current) save(KEYS.dates, completionDates);
   }, [completionDates]);
 
   // Apply Theme
@@ -199,6 +207,12 @@ export default function App() {
     <div className="relative min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-500 py-10 px-4 sm:px-6 lg:px-8 overflow-x-hidden">
       <BackgroundBlobs />
 
+      {isLoading ? (
+        <div className="relative z-10 flex flex-col items-center justify-center min-h-[60vh] gap-4">
+          <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+          <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">Loading your progress…</p>
+        </div>
+      ) : (
       <div className="relative z-10 max-w-5xl mx-auto space-y-8">
         <Header
           activeTab={activeTab}
@@ -295,9 +309,9 @@ export default function App() {
                   </div>
                 </div>
 
-                <div
-                  className={`space-y-6 transition-all duration-300 origin-top ${isCollapsed ? "hidden opacity-0" : "block opacity-100"}`}
-                >
+                {!isCollapsed && (
+                <div className="space-y-6">
+
                   {filteredPatterns.map((category, cIdx) => {
                     const categoryTotalActual = category.problems.length;
                     const categoryDoneActual = category.problems.filter((p) =>
@@ -337,9 +351,9 @@ export default function App() {
                           </span>
                         </div>
 
-                        <div
-                          className={`transition-all duration-300 origin-top ${isPatternCollapsed ? "hidden opacity-0 h-0" : "block opacity-100 h-auto"}`}
-                        >
+                        {!isPatternCollapsed && (
+                        <div>
+
                           <div className="divide-y divide-slate-100/80 dark:divide-slate-800/60">
                             {category.filteredProblems.map((problem) => (
                               <ProblemRow
@@ -354,15 +368,18 @@ export default function App() {
                             ))}
                           </div>
                         </div>
+                        )}
                       </section>
                     );
                   })}
                 </div>
+                )}
               </div>
             );
           })}
         </div>
       </div>
+      )}
     </div>
   );
 }
