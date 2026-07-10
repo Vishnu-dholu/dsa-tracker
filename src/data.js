@@ -131,6 +131,14 @@ export const thirtyDaySheet = [
       { pattern: "Pattern 93: Design", problems: ["146. LRU Cache", "380. Insert Delete GetRandom O(1)"] },
       { pattern: "Pattern 94: Tries", problems: ["208. Implement Trie (Prefix Tree)", "211. Design Add and Search Words Data Structure"] }
     ]
+  },
+  {
+    topic: "XVI. Segment Tree & Range Query Patterns",
+    patterns: [
+      { pattern: "Pattern 95: Range Sum/Min/Max Query", problems: ["303. Range Sum Query - Immutable", "307. Range Sum Query - Mutable"] },
+      { pattern: "Pattern 96: Lazy Propagation", problems: ["699. Falling Squares"] },
+      { pattern: "Pattern 97: Count Inversions / Order Statistics", problems: ["315. Count of Smaller Numbers After Self"] }
+    ]
   }
 ];
 
@@ -302,6 +310,17 @@ export const fullSheet = [
     patterns: [
       { pattern: "Pattern 93: Design (General/Specific)", problems: ["146. LRU Cache", "155. Min Stack", "225. Implement Stack using Queues", "232. Implement Queue using Stacks", "251. Flatten 2D Vector", "271. Encode and Decode Strings", "295. Find Median from Data Stream", "341. Flatten Nested List Iterator", "346. Moving Average from Data Stream", "353. Design Snake Game", "359. Logger Rate Limiter", "362. Design Hit Counter", "379. Design Phone Directory", "380. Insert Delete GetRandom O(1)", "432. All O`one Data Structure", "460. LFU Cache", "604. Design Compressed String Iterator", "622. Design Circular Queue", "641. Design Circular Deque", "642. Design Search Autocomplete System", "706. Design HashMap", "715. Range Module", "900. RLE Iterator", "981. Time Based Key-Value Store", "1146. Snapshot Array", "1348. Tweet Counts Per Frequency", "1352. Product of the Last K Numbers", "1381. Design a Stack With Increment Operation", "1756. Design Most Recently Used Queue", "2013. Detect Squares", "2034. Stock Price Fluctuation", "2296. Design a Text Editor", "2336. Smallest Number in Infinite Set"] },
       { pattern: "Pattern 94: Tries", problems: ["208. Implement Trie (Prefix Tree)", "211. Design Add and Search Words Data Structure", "720. Longest Word in Dictionary", "648. Replace Words", "425. Word Squares", "642. Design Search Autocomplete System", "745. Prefix and Suffix Search"] }
+    ]
+  },
+  {
+    topic: "XVI. Segment Tree & Range Query Patterns",
+    patterns: [
+      { pattern: "Pattern 95: Basic Segment Tree - Range Sum/Min/Max Query", problems: ["303. Range Sum Query - Immutable", "304. Range Sum Query 2D - Immutable", "307. Range Sum Query - Mutable", "2569. Handling Sum Queries After Update"] },
+      { pattern: "Pattern 96: Segment Tree with Lazy Propagation", problems: ["370. Range Addition", "699. Falling Squares", "1622. Fancy Sequence", "2407. Longest Increasing Subsequence II"] },
+      { pattern: "Pattern 97: Merge Sort Tree / Order Statistics", problems: ["315. Count of Smaller Numbers After Self", "327. Count of Range Sum", "493. Reverse Pairs", "2426. Number of Pairs Satisfying Inequality"] },
+      { pattern: "Pattern 98: Dynamic Segment Tree / Range Module", problems: ["715. Range Module", "729. My Calendar I", "731. My Calendar II", "732. My Calendar III"] },
+      { pattern: "Pattern 99: Binary Indexed Tree (Fenwick Tree)", problems: ["307. Range Sum Query - Mutable", "308. Range Sum Query 2D - Mutable", "218. The Skyline Problem", "1649. Create Sorted Array through Instructions"] },
+      { pattern: "Pattern 100: Segment Tree with Special Operations", problems: ["1157. Online Majority Element In Subarray", "1521. Find a Value of a Mysterious Function Closest to Target", "2286. Booking Concert Tickets in Groups", "2588. Count the Number of Beautiful Subarrays"] }
     ]
   }
 ];
